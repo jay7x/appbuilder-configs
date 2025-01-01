@@ -1,0 +1,45 @@
+---
+name: voxcli
+description: Vox Pupuli repo CLI helper
+version: 1.0.0
+author: Yury Bushmelev <jay4mail@gmail.com>
+commands:
+  - name: repo
+    description: |
+      Manage the repository
+    type: parent
+    commands:
+    - name: prep
+      description: |
+        Prepare the repository according to Vox Pupuli standards
+      flags:
+        - name: ruby_version
+          description: Ruby version to configure for the repository
+          env: VP_REPO_RUBY_VERSION
+          default: "3.2"
+        - name: sign
+          description: Sign git commits with a ssh key
+          bool: true
+          default: true
+        - name: signing_key
+          description: SSH key to sign commits with
+          default: "~/.ssh/voxpupuli.pub"
+        - name: git_name
+          description: Git user name to set
+          env: VP_REPO_GIT_NAME
+        - name: git_email
+          description: Git user email to set
+          env: VP_REPO_GIT_EMAIL
+      type: exec
+      script: |
+        mise use -p .mise.toml ruby@{{ .Flags.ruby_version }}
+        mise exec -- bundle config set path 'vendor/bundle'
+        mise exec -- bundle install
+        {{ if .Flags.sign }}
+        git config gpg.format ssh
+        git config commit.gpgsign true
+        git config user.signingkey {{ .Flags.signing_key }}
+        {{ end }}
+        {{ if .Flags.git_name }}git config user.name {{ .Flags.git_name }}{{ end }}
+        {{ if .Flags.git_email }}git config user.email {{ .Flags.git_email }}{{ end }}
+
